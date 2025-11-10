@@ -5,5 +5,6 @@
 <a href="https://github.com/sponsors/DraftShift" target="_blank" alt="Sponsor Us">![GitHub Sponsors](https://img.shields.io/github/sponsors/DraftShift?logo=githubsponsors&label=Sponsors&labelColor=rgb(246%2C%20248%2C%20250)&color=rgb(191%2C%2057%2C%20137))</a>
 
 Backpacks, Umbilicals, and general cable management projects
+![](media/images/Cable.png?raw=true)
 
 This repo will be a collection of different options.  Feel free to use the one that you prefer.
