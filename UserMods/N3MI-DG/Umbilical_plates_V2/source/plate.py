@@ -370,7 +370,7 @@ def makePG7Thread():
     return(thread.cq_object.fuse(core.val()).translate((0, 0, 3)))
 
 
-def makePlate(outer_plate, face_plate, printer="voron", printer_size=300, tool_count=6, dock_width=60, panel_thick=4, logo=True, port_pos="split", port_type="TPU", thread_negative=None):
+def makePlate(outer_plate, face_plate, printer="voron", printer_size=300, tool_count=6, dock_width=60, panel_thick=4, logo=True, port_pos="split", port_type="TPU", thread_negative=None, mount_rail="TOP"):
     extrusion_size = profiles[printer]['extrusion_size']
     inner_thick    = profiles[printer]['inner_thick']
     outer_thick    = profiles[printer]['outer_thick']
@@ -380,6 +380,8 @@ def makePlate(outer_plate, face_plate, printer="voron", printer_size=300, tool_c
     frame_deadzone = profiles[printer]['frame_deadzone']
     back_centers   = profiles[printer]['back_centers_logo' if logo else 'back_centers']
     frame_x_width  = frames[printer_size][0]
+    port_y_rotate  = 180 if mount_rail == "BOTTOM" else 0
+    screw_point_angle_left, screw_point_angle_right = (-45, 45) if mount_rail == "BOTTOM" else (45, -45)
 
     logo_tools = [i for i in range(1, tool_count+1) if i <= frames[printer_size][2 if dock_width == 60 else 3]/2 or i % 2 == 0]
     center_offset  = profiles[printer]['center_offset'] if logo and tool_count in logo_tools else 0
@@ -549,7 +551,7 @@ def makePlate(outer_plate, face_plate, printer="voron", printer_size=300, tool_c
                 .circle(4.7/2)
                 .extrude(5.63+4.5)
                 .translate((0, 0, -(port_length+outer_thick-(screw_offsets[tool]))))
-                .rotate((0, 0, 0), (0, 0, 1), 45 if dock_angle < 0 else -45)
+                .rotate((0, 0, 0), (0, 0, 1), screw_point_angle_left if dock_angle < 0 else screw_point_angle_right)
             )
 
             locals()[f'inner_{tool}'] = locals()[f'inner_{tool}'].union(bowden).union(screw_point)
@@ -568,6 +570,7 @@ def makePlate(outer_plate, face_plate, printer="voron", printer_size=300, tool_c
         locals()[f'inner_{tool}'] = (
             locals()[f'inner_{tool}']
             .rotate((0, 0, 0), (1, 0, 0), port_angle)
+            .rotate((0, 0, 0), (0, 1, 0), port_y_rotate)
             .rotate((0, 0, 0), (0, 0, 1), dock_angle)
             .translate((back_offset, -(panel_thick+inner_thick), port_z_offset))
         )
@@ -576,6 +579,7 @@ def makePlate(outer_plate, face_plate, printer="voron", printer_size=300, tool_c
         locals()[f'body_{tool}'] = (
             port_shape
             .rotate((0, 0, 0), (1, 0, 0), port_angle)
+            .rotate((0, 0, 0), (0, 1, 0), port_y_rotate)
             .rotate((0, 0, 0), (0, 0, 1), dock_angle)
             .translate((back_offset, -(panel_thick+inner_thick), port_z_offset))
             .cut(outer_plate.faces("<Y[-3]" if logo else "<Y").workplane().rect(printer_size, printer_size).extrude(-printer_size))
@@ -588,6 +592,7 @@ def makePlate(outer_plate, face_plate, printer="voron", printer_size=300, tool_c
             .placeSketch(clear, sk_clear.moved(cq.Location(cq.Vector(0, 0, port_length*2.6))))
             .loft()
             .rotate((0, 0, 0), (1, 0, 0), port_angle)
+            .rotate((0, 0, 0), (0, 1, 0), port_y_rotate)
             .rotate((0, 0, 0), (0, 0, 1), dock_angle)
             .translate((back_offset, -(panel_thick+inner_thick), port_z_offset))
         )
@@ -609,3 +614,4 @@ def makePlate(outer_plate, face_plate, printer="voron", printer_size=300, tool_c
 
     return(outer_plate, face_plate, dock_positions)
 
+ 

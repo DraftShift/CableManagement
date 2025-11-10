@@ -63,8 +63,8 @@ def validPlate(printer_size, tool_count, port_pos, dock_size, logo):
 
 def main():
     printers = [
-        {"name": "voron", "sizes": [250, 300, 350], "dock_widths": [60, 76], "port_types": ["TPU", "THREAD"]},
-        {"name": "micron", "sizes": [180], "dock_widths": [60], "port_types": ["TPU"]}
+            {"name": "voron", "sizes": [250, 300, 350], "dock_widths": [60, 76], "port_types": ["TPU", "THREAD"], "mount_rail": ["TOP", "BOTTOM"]},
+            {"name": "micron", "sizes": [180], "dock_widths": [60], "port_types": ["TPU"], "mount_rail": ["TOP", "BOTTOM"]}
     ]
 
     type_count   = 0
@@ -136,133 +136,136 @@ def main():
                                             position_path = os.path.join(port_path, port_pos.title())
                                             makePath(position_path)
 
-                                            name = f"{printer['name'].title()}_{printer_size}_{dock['width']}mm_{tool_count}tools_{port_pos}_{port_type}"
+                                            for mount_rail in printer['mount_rail']:
 
-                                            outer_name = f"{name}_Outer"
-                                            face_name = f"{name}_Face"
+                                                name = f"{printer['name'].title()}_{printer_size}_{dock['width']}mm_{tool_count}tools_{port_pos}_{port_type}_{mount_rail}_rail"
 
-                                            print("Calculating", name)
-                                            type_count += 1
-                                            print(type_count)
+                                                outer_name = f"{name}_Outer"
+                                                face_name = f"{name}_Face"
 
-                                            if port_type == "TPU":
-                                                thread_negative = None
-                                            else:
-                                                thread_negative = PG7_thread
+                                                print("Calculating", name)
+                                                type_count += 1
+                                                print(type_count)
 
-                                            _outer_plate, _face_plate, dock_positions = makePlate(
-                                                outer_plate, 
-                                                face_plate, 
-                                                printer=printer['name'], 
-                                                printer_size=printer_size, 
-                                                tool_count=tool_count, 
-                                                dock_width=dock['width'],
-                                                logo=logo, 
-                                                port_pos=port_pos, 
-                                                port_type=port_type,
-                                                thread_negative=thread_negative
-                                            )
+                                                if port_type == "TPU":
+                                                    thread_negative = None
+                                                else:
+                                                    thread_negative = PG7_thread
 
-                                            # Export STL
-                                            stl_outer_plate = _outer_plate.union(hexes).rotate((0, 0, 0), (1, 0, 0), -90)
-                                            stl_face_plate   = _face_plate.rotate((0, 0, 0), (1, 0, 0), 90)
-
-                                            print("Generating", f"{outer_name}.stl")
-                                            cq.exporters.export(stl_outer_plate, os.path.join(position_path, f"{outer_name}.stl"), angularTolerance=0.3)
-
-                                            print("Generating", f"{face_name}.stl")
-                                            cq.exporters.export(stl_face_plate, os.path.join(position_path, f"{face_name}.stl"), angularTolerance=0.3)
-
-                                            if logo:
-                                                logo_name = f"{printer['name'].title()}_Logo_Insert.stl"
-
-                                                print("Generating", logo_name)
-                                                cq.exporters.export(logo_insert.rotate((0, 0, 0), (-1, 0, 0), 90), os.path.join(position_path, logo_name))
-
-                                            # Export CAD
-                                            assm = cq.Assembly(name=f"_{name}")
-
-                                            assm.add(
-                                                _face_plate.translate((assm_xoffsets[printer_size], 0, assm_zoffsets[printer_size])),
-                                                name=f"{name}_Face_Plate", 
-                                                color=cq.Color("darkorchid4")
-                                            )
-
-                                            assm.add(
-                                                _outer_plate.translate((assm_xoffsets[printer_size], 0, assm_zoffsets[printer_size])), 
-                                                name=f"{name}_Outer",      
-                                                color=cq.Color("gray18")
-                                            
-                                            )
-
-                                            assm.add(
-                                                hexes.translate((assm_xoffsets[printer_size], 0, assm_zoffsets[printer_size])),
-                                                name=f"{name}_Hexes",
-                                                color=cq.Color("darkorchid4")
-                                            )
-
-                                            if logo:
-                                                assm.add(
-                                                    logo_insert.translate((assm_xoffsets[printer_size], 0, assm_zoffsets[printer_size])), 
-                                                    name=f"{printer['name'].title()} Insert", 
-                                                    color=cq.Color("GhostWhite")
+                                                _outer_plate, _face_plate, dock_positions = makePlate(
+                                                    outer_plate, 
+                                                    face_plate, 
+                                                    printer=printer['name'], 
+                                                    printer_size=printer_size, 
+                                                    tool_count=tool_count, 
+                                                    dock_width=dock['width'],
+                                                    logo=logo, 
+                                                    port_pos=port_pos, 
+                                                    port_type=port_type,
+                                                    thread_negative=thread_negative,
+                                                    mount_rail=mount_rail
                                                 )
-                                            
-                                            locals()[f"{printer['name']}_{printer_size}_assm"].add(assm, name=name)
 
-                                            assm_zoffsets[printer_size] += 100
+                                                # Export STL
+                                                stl_outer_plate = _outer_plate.union(hexes).rotate((0, 0, 0), (1, 0, 0), -90)
+                                                stl_face_plate   = _face_plate.rotate((0, 0, 0), (1, 0, 0), 90)
 
-                                            # Assembly for image
-                                            frame = (
-                                                cq.Workplane()
-                                                .box(frames[printer_size][0]+(frames[printer_size][4]*2), frames[printer_size][1]+(frames[printer_size][4]*2), frames[printer_size][4])
-                                                .faces(">Z").workplane().rect(frames[printer_size][0], frames[printer_size][1]).extrude(-frames[printer_size][4], "cut")
+                                                print("Generating", f"{outer_name}.stl")
+                                                cq.exporters.export(stl_outer_plate, os.path.join(position_path, f"{outer_name}.stl"), angularTolerance=0.3)
+
+                                                print("Generating", f"{face_name}.stl")
+                                                cq.exporters.export(stl_face_plate, os.path.join(position_path, f"{face_name}.stl"), angularTolerance=0.3)
+
+                                                if logo:
+                                                    logo_name = f"{printer['name'].title()}_Logo_Insert.stl"
+
+                                                    print("Generating", logo_name)
+                                                    cq.exporters.export(logo_insert.rotate((0, 0, 0), (-1, 0, 0), 90), os.path.join(position_path, logo_name))
+
+                                                # Export CAD
+                                                assm = cq.Assembly(name=f"_{name}")
+
+                                                assm.add(
+                                                    _face_plate.translate((assm_xoffsets[printer_size], 0, assm_zoffsets[printer_size])),
+                                                    name=f"{name}_Face_Plate", 
+                                                    color=cq.Color("darkorchid4")
+                                                )
+
+                                                assm.add(
+                                                    _outer_plate.translate((assm_xoffsets[printer_size], 0, assm_zoffsets[printer_size])), 
+                                                    name=f"{name}_Outer",      
+                                                    color=cq.Color("gray18")
                                                 
-                                                .translate((
-                                                    0, 
-                                                    -frames[printer_size][1]/2-frames[printer_size][4]-panel_thick, 
-                                                    (profiles[printer['name']]['panel_cutout'][1] + profiles[printer['name']]['outer_panel_z_offset'] + profiles[printer['name']]['outer_panel_overlap_z'])/2-frames[printer_size][4]/2
-                                                ))
-                                            )
+                                                )
 
-                                            assm = cq.Assembly(name=f"_{name}")
-                                            assm.add(_face_plate,  name="Face Plate", color=cq.Color("darkorchid4"))
-                                            assm.add(_outer_plate, name="Outer",      color=cq.Color("gray18"))
-                                            assm.add(frame,        name="Frame",      color=cq.Color("Gray"))
+                                                assm.add(
+                                                    hexes.translate((assm_xoffsets[printer_size], 0, assm_zoffsets[printer_size])),
+                                                    name=f"{name}_Hexes",
+                                                    color=cq.Color("darkorchid4")
+                                                )
 
-                                            for i, pos in enumerate(dock_positions):
-                                                assm.add(cq.importers.importStep(f"../supplements/{'Anthead' if dock['width'] == 60 else 'SB'}.step").rotate((0, 0, 0), (1, 0, 0), 90).translate(pos), name=f"Dock{i}", color=cq.Color("yellow"))
+                                                if logo:
+                                                    assm.add(
+                                                        logo_insert.translate((assm_xoffsets[printer_size], 0, assm_zoffsets[printer_size])), 
+                                                        name=f"{printer['name'].title()} Insert", 
+                                                        color=cq.Color("GhostWhite")
+                                                    )
+                                                
+                                                locals()[f"{printer['name']}_{printer_size}_assm"].add(assm, name=name)
 
-                                            cq.exporters.export(
-                                                assm.toCompound(),
-                                                os.path.join(img_path, f"{name}.svg"),
-                                                opt={
-                                                    "width": 300,
-                                                    "height": 300,
-                                                    "marginLeft": 10,
-                                                    "marginRight": 10,
-                                                    "marginTop": 10,
-                                                    "marginBottom": 10,
-                                                    "showAxes": False,
-                                                    "projectionDir": (0.0, 0.0, 1.0),
-                                                    "strokeWidth": 0.5,
-                                                    "strokeColor": (255, 0, 0),
-                                                    "hiddenColor": (0, 0, 255),
-                                                    "showHidden": True,
-                                                }
-                                            )
-                                            name = f"{printer['name'].title()}_{printer_size}_{dock['width']}mm_{tool_count}tools_{port_pos}_{port_type}"
-                                            valid_plates.append(
-                                                {
-                                                    "name"        : name,
-                                                    "printer_name": printer['name'],
-                                                    "printer_size": printer_size,
-                                                    "dock_width"  : dock['width'],
-                                                    "tool_count"  : tool_count,
-                                                    "port_pos"    : port_pos,
-                                                    "port_type"   : port_type
-                                                }
-                                            )
+                                                assm_zoffsets[printer_size] += 100
+
+                                                # Assembly for image
+                                                frame = (
+                                                    cq.Workplane()
+                                                    .box(frames[printer_size][0]+(frames[printer_size][4]*2), frames[printer_size][1]+(frames[printer_size][4]*2), frames[printer_size][4])
+                                                    .faces(">Z").workplane().rect(frames[printer_size][0], frames[printer_size][1]).extrude(-frames[printer_size][4], "cut")
+                                                    
+                                                    .translate((
+                                                        0, 
+                                                        -frames[printer_size][1]/2-frames[printer_size][4]-panel_thick, 
+                                                        (profiles[printer['name']]['panel_cutout'][1] + profiles[printer['name']]['outer_panel_z_offset'] + profiles[printer['name']]['outer_panel_overlap_z'])/2-frames[printer_size][4]/2
+                                                    ))
+                                                )
+
+                                                assm = cq.Assembly(name=f"_{name}")
+                                                assm.add(_face_plate,  name="Face Plate", color=cq.Color("darkorchid4"))
+                                                assm.add(_outer_plate, name="Outer",      color=cq.Color("gray18"))
+                                                assm.add(frame,        name="Frame",      color=cq.Color("Gray"))
+
+                                                for i, pos in enumerate(dock_positions):
+                                                    assm.add(cq.importers.importStep(f"../supplements/{'Anthead' if dock['width'] == 60 else 'SB'}.step").rotate((0, 0, 0), (1, 0, 0), 90).translate(pos), name=f"Dock{i}", color=cq.Color("yellow"))
+
+                                                cq.exporters.export(
+                                                    assm.toCompound(),
+                                                    os.path.join(img_path, f"{name}.svg"),
+                                                    opt={
+                                                        "width": 300,
+                                                        "height": 300,
+                                                        "marginLeft": 10,
+                                                        "marginRight": 10,
+                                                        "marginTop": 10,
+                                                        "marginBottom": 10,
+                                                        "showAxes": False,
+                                                        "projectionDir": (0.0, 0.0, 1.0),
+                                                        "strokeWidth": 0.5,
+                                                        "strokeColor": (255, 0, 0),
+                                                        "hiddenColor": (0, 0, 255),
+                                                        "showHidden": True,
+                                                    }
+                                                )
+                                                name = f"{printer['name'].title()}_{printer_size}_{dock['width']}mm_{tool_count}tools_{port_pos}_{port_type}_{mount_rail}_rail"
+                                                valid_plates.append(
+                                                    {
+                                                        "name"        : name,
+                                                        "printer_name": printer['name'],
+                                                        "printer_size": printer_size,
+                                                        "dock_width"  : dock['width'],
+                                                        "tool_count"  : tool_count,
+                                                        "port_pos"    : port_pos,
+                                                        "port_type"   : port_type
+                                                    }
+                                                )
 
     # Export the CAD files
     print("Exporting CAD files")
